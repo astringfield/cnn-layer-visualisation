@@ -78,7 +78,7 @@ def main():
             with tf.GradientTape() as tape:
                 logits = classifier(x_batch_train, training=True)
                 loss_value = loss_function(y_batch_train, logits)
-                a=2
+                a = 2
 
             gradients = tape.gradient(loss_value, classifier.trainable_weights)
             optimiser.apply_gradients(zip(gradients, classifier.trainable_weights))
@@ -91,5 +91,8 @@ def main():
                 )
                 print("Seen so far: %s samples" % ((step + 1) * batch_size))
 
-
     a = 2
+
+
+if __name__ == '__main__':
+    main()
