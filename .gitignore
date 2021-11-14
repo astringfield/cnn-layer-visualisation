@@ -11,6 +11,8 @@ __pycache__/
 # Distribution / packaging
 .Python
 env/
+venv/
+__venv_old/
 build/
 develop-eggs/
 dist/
@@ -150,3 +152,4 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 /logs/
+/__venv_old/
