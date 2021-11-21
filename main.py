@@ -2,6 +2,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 import numpy as np
+import time
 
 
 inputs = keras.Input(shape=(784,), name="digits")
@@ -19,6 +20,10 @@ First, we're going to need an optimizer, a loss function, and a dataset:
 optimizer = keras.optimizers.SGD(learning_rate=1e-3)
 # Instantiate a loss function.
 loss_fn = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+
+# Prepare the metrics.
+train_acc_metric = keras.metrics.SparseCategoricalAccuracy()
+val_acc_metric = keras.metrics.SparseCategoricalAccuracy()
 
 # Prepare the training dataset.
 batch_size = 64
@@ -55,6 +60,7 @@ gradients
 epochs = 2
 for epoch in range(epochs):
     print("\nStart of epoch %d" % (epoch,))
+    start_time = time.time()
 
     # Iterate over the batches of the dataset.
     for step, (x_batch_train, y_batch_train) in enumerate(train_dataset):
@@ -80,10 +86,30 @@ for epoch in range(epochs):
         # the value of the variables to minimize the loss.
         optimizer.apply_gradients(zip(grads, model.trainable_weights))
 
+        # Update training metric.
+        train_acc_metric.update_state(y_batch_train, logits)
+
         # Log every 200 batches.
         if step % 200 == 0:
             print(
                 "Training loss (for one batch) at step %d: %.4f"
                 % (step, float(loss_value))
             )
-            print("Seen so far: %s samples" % ((step + 1) * batch_size))
+            print("Seen so far: %d samples" % ((step + 1) * 64))
+
+    # Display metrics at the end of each epoch.
+    train_acc = train_acc_metric.result()
+    print("Training acc over epoch: %.4f" % (float(train_acc),))
+
+    # Reset training metrics at the end of each epoch
+    train_acc_metric.reset_states()
+
+    # Run a validation loop at the end of each epoch.
+    for x_batch_val, y_batch_val in val_dataset:
+        val_logits = model(x_batch_val, training=False)
+        # Update val metrics
+        val_acc_metric.update_state(y_batch_val, val_logits)
+    val_acc = val_acc_metric.result()
+    val_acc_metric.reset_states()
+    print("Validation acc: %.4f" % (float(val_acc),))
+    print("Time taken: %.2fs" % (time.time() - start_time))
