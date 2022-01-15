@@ -4,6 +4,7 @@ import time
 import tensorflow as tf
 import tensorflow_datasets as tfds
 import numpy as np
+from matplotlib import pyplot as plt
 
 from tensorflow import keras
 from tensorflow.keras import layers
@@ -49,6 +50,7 @@ def main():
     # Label names
     label_names = ["top", "trouser", "pullover", "dress", "coat",
                    "sandal", "shirt", "sneaker", "bag", "ankle boot"]
+    classes = len(label_names)
     batch_size = 32
     epochs = 20
     learning_rate = 1e-3
@@ -72,10 +74,9 @@ def main():
 
     test_labels = keras.utils.to_categorical(test_labels, 10)
     val_dataset = tf.data.Dataset.from_tensor_slices((test_images, test_labels))
-    val_dataset.batch(batch_size=batch_size)
+    val_dataset = val_dataset.batch(batch_size=batch_size)
 
     input_shape = train_images[0].shape
-    classifier = keras.Sequential()
     optimiser = keras.optimizers.SGD(learning_rate=learning_rate)
     loss_function = keras.losses.CategoricalCrossentropy()
 
@@ -85,29 +86,17 @@ def main():
 
     classifier = tds_model(input_shape[0], input_shape[1], input_shape[2], classes)
 
-    # Adding a third convolutional layer
-    classifier.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
-    classifier.add(layers.Conv2D(64, (3, 3), activation='relu'))
-    classifier.add(layers.MaxPooling2D(pool_size=(2, 2)))
-    classifier.add(layers.Dropout(0.5))  # antes era 0.25
+    layer_outputs = [layer.output for layer in classifier.layers[1:]]
+    classifier_visualisation = tf.keras.models.Model(inputs=classifier.input, outputs=layer_outputs)
 
-    # Step 3 - Flattening
-    classifier.add(layers.Flatten())
-
-    # Step 4 - Full connection
-    classifier.add(layers.Dense(units=512, activation='relu'))
-    classifier.add(layers.Dropout(0.5))
-    classifier.add(layers.Dense(units=10, activation='softmax'))
-
-    classifier.summary()
-    # classifier.compile(loss="categorical_crossentropy", optimizer="SGD", metrics=["accuracy"]
-    #                    , learning_rate=learning_rate)
+    # # classifier.compile(loss="categorical_crossentropy", optimizer="SGD", metrics=["accuracy"], learning_rate=learning_rate)
+    # classifier.compile(loss="categorical_crossentropy", optimizer=optimiser, metrics=["accuracy"])
     # classifier.fit(train_images, train_labels, batch_size=batch_size,
     #                epochs=epochs, validation_split=0.2)  # ,callbacks=[tensorboard_callback])
     # return
 
     for epoch in range(epochs):
-        print('\nRunning epoch %d', epoch)
+        print('\nRunning epoch', epoch)
         start_time = time.time()
 
         for step, (x_batch_train, y_batch_train) in enumerate(train_dataset):
@@ -176,15 +165,15 @@ def main():
 
             # Log every 200 batches.
             if step % 200 == 0:
-                print(
-                    "Training loss (for one batch) at step %d: %.4f"
-                    % (step, float(loss_value))
-                )
-                print("Seen so far: %s samples" % ((step + 1) * batch_size))
+                train_acc = train_acc_metric.result()
+                print('training - step: ' + str(step) + ' - accuracy: ' +
+                      str(format(float(train_acc), '.5f') + ' - loss: ' + str(format(float(loss_value), '.5f'))))
+                # print("Seen so far: %s samples" % ((step + 1) * batch_size))
 
         # Display metrics at the end of each epoch.
         train_acc = train_acc_metric.result()
-        print("Training acc over epoch: %.4f" % (float(train_acc),))
+        print('training - accuracy: ' + str(format(float(train_acc), '.5f')))
+        # print("Training acc over epoch: %.5f" % (float(train_acc),))
 
         # Reset training metrics at the end of each epoch
         train_acc_metric.reset_states()
@@ -196,10 +185,12 @@ def main():
             val_acc_metric.update_state(y_batch_val, val_logits)
         val_acc = val_acc_metric.result()
         val_acc_metric.reset_states()
-        print("Validation acc: %.4f" % (float(val_acc),))
-        print("Time taken: %.2fs" % (time.time() - start_time))
+        print('validation - accuracy: ' + str(format(float(val_acc), '.5f')))
+        # print("Validation acc: %.4f" % (float(val_acc),))
+        print("time taken: %.2fs" % (time.time() - start_time))
 
     a = 2
+    print('Done')
 
 
 if __name__ == '__main__':
