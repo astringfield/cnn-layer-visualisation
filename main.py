@@ -125,6 +125,55 @@ def main():
             # logits_decoded = tf.argmax(logits, axis=1)
             train_acc_metric.update_state(y_batch_train, logits)
 
+            conv2d_first = classifier.layers[0]
+            weights, biases = conv2d_first.get_weights()
+            weights_r = weights.reshape(32, 3, 3, 1)
+            first = weights[:, :, :, 0]
+            first_r = weights_r[0, :, :, :]
+
+            # num_filters = weights.shape[3]
+            # for i in range(num_filters):
+            #     # Normalise the weights
+            #     filter = weights[:, :, :, i]
+            #     filter_norm = (filter - filter.min()) / (filter.max() - filter.min())
+            #
+            #     # Plot each filter
+            #     ax = plt.subplot(weights.shape[3], 1, i+1)
+            #     ax.set_xticks([])
+            #     ax.set_yticks([])
+            #     plt.imshow(filter_norm)
+            #     a=2
+
+            visualisation_image = test_images[0:32, :, :, :]
+            successive_feature_maps = classifier_visualisation.predict(visualisation_image)
+
+            layer_names = [layer.name for layer in classifier_visualisation.layers]
+            for layer_name, feature_map in zip(layer_names, successive_feature_maps):
+                print(feature_map.shape)
+
+                if 'conv2d' in layer_name:
+                    idx = 0
+                    for images in feature_map:
+                        # Set of feature maps for the first in the batch
+                        # Plot input image
+                        plt.figure(f'figure_image_{layer_name}_{idx}')
+                        # plt.imshow(visualisation_image[0, :, :, 0])
+
+                        '''Can these images be saved to tensorboard??'''
+
+                        for idx in range(0, 32):
+                            # Plot feature map
+                            map = images[:, :, idx]
+                            ax = plt.subplot(4, 8, idx+1)
+                            plt.imshow(map, cmap='gray')
+                            # plt.figure('figure_feature' + str(idx))
+                            # # plt.imshow(map)
+                            a=2
+                        plt.show()
+                        idx += 1
+                        assert True
+            assert False
+
             # Log every 200 batches.
             if step % 200 == 0:
                 print(
