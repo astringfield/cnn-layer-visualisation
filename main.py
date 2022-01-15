@@ -11,6 +11,40 @@ from tensorflow.keras.callbacks import TensorBoard
 from utils import plot_to_image, image_grid
 
 
+def tds_model(image_width, image_height, image_depth, classes):
+    classifier = keras.Sequential()
+    input_shape = (image_width, image_height, image_depth)
+
+    # Step 1 - Convolution
+    classifier.add(layers.Conv2D(32, (3, 3), padding='same', input_shape=input_shape, activation='relu'))
+    classifier.add(layers.Conv2D(32, (3, 3), activation='relu'))
+    classifier.add(layers.MaxPooling2D(pool_size=(2, 2)))
+    classifier.add(layers.Dropout(0.5))  # antes era 0.25
+
+    # Adding a second convolutional layer
+    classifier.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
+    classifier.add(layers.Conv2D(64, (3, 3), activation='relu'))
+    classifier.add(layers.MaxPooling2D(pool_size=(2, 2)))
+    classifier.add(layers.Dropout(0.5))  # antes era 0.25
+
+    # Adding a third convolutional layer
+    classifier.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
+    classifier.add(layers.Conv2D(64, (3, 3), activation='relu'))
+    classifier.add(layers.MaxPooling2D(pool_size=(2, 2)))
+    classifier.add(layers.Dropout(0.5))  # antes era 0.25
+
+    # Step 3 - Flattening
+    classifier.add(layers.Flatten())
+
+    # Step 4 - Full connection
+    classifier.add(layers.Dense(units=512, activation='relu'))
+    classifier.add(layers.Dropout(0.5))
+    classifier.add(layers.Dense(units=10, activation='softmax'))
+
+    classifier.summary()
+    return classifier
+
+
 def main():
     # Label names
     label_names = ["top", "trouser", "pullover", "dress", "coat",
@@ -49,17 +83,7 @@ def main():
     train_acc_metric = keras.metrics.CategoricalAccuracy()
     val_acc_metric = keras.metrics.CategoricalAccuracy()
 
-    # Step 1 - Convolution
-    classifier.add(layers.Conv2D(32, (3, 3), padding='same', input_shape=input_shape, activation='relu'))
-    classifier.add(layers.Conv2D(32, (3, 3), activation='relu'))
-    classifier.add(layers.MaxPooling2D(pool_size=(2, 2)))
-    classifier.add(layers.Dropout(0.5))  # antes era 0.25
-
-    # Adding a second convolutional layer
-    classifier.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
-    classifier.add(layers.Conv2D(64, (3, 3), activation='relu'))
-    classifier.add(layers.MaxPooling2D(pool_size=(2, 2)))
-    classifier.add(layers.Dropout(0.5))  # antes era 0.25
+    classifier = tds_model(input_shape[0], input_shape[1], input_shape[2], classes)
 
     # Adding a third convolutional layer
     classifier.add(layers.Conv2D(64, (3, 3), padding='same', activation='relu'))
